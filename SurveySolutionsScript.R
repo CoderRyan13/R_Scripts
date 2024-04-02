@@ -8,6 +8,7 @@ library("plyr")
 
 library(DBI)
 library(RMySQL)
+library(janitor)
 
 # creating a database connection
 connection <- dbConnect(RMySQL::MySQL(), 
@@ -33,7 +34,7 @@ set_credentials(
 # optionally specifying other options--including some not available in the UI
 start_export(
   qnr_id = "8f467cac973940b184efec0944aea449$1",
-  export_type = "STATA",
+  export_type = "SPSS",
   interview_status = "All",
   include_meta = TRUE
 ) -> started_job_id
@@ -58,43 +59,30 @@ while (TRUE){
 # - where to download the file
 get_export_file(
   job_id = started_job_id,
-  path = "C:\\Users\\sib_temp\\Documents\\R Script\\Script"
+ # path = "C:\\Users\\sib_temp\\Documents\\R Script\\Script"
+ path = './'
   # path = "/home/rshiny/airflow/scripts"
 )
 
-# Extract dta files out of zip
-dtaFile1 = unz("belize_hbs_4_1_STATA_All.zip", "belize_hbs_4.dta")
-dtaFile2 = unz("belize_hbs_4_1_STATA_All.zip", "consumption_pattern_roster.dta")
-dtaFile3 = unz("belize_hbs_4_1_STATA_All.zip", "FF1Roster.dta")
-dtaFile4 = unz("belize_hbs_4_1_STATA_All.zip", "FF2Roster.dta")
-dtaFile5 = unz("belize_hbs_4_1_STATA_All.zip", "FF3Roster.dta")
-dtaFile6 = unz("belize_hbs_4_1_STATA_All.zip", "FF4Roster.dta")
-dtaFile7 = unz("belize_hbs_4_1_STATA_All.zip", "FF5Roster.dta")
-dtaFile8 = unz("belize_hbs_4_1_STATA_All.zip", "FF6Roster.dta")
-dtaFile9 = unz("belize_hbs_4_1_STATA_All.zip", "FF7Roster.dta")
-dtaFile10 = unz("belize_hbs_4_1_STATA_All.zip", "FF8Roster.dta")
-dtaFile11 = unz("belize_hbs_4_1_STATA_All.zip", "FF9Roster.dta")
-dtaFile12 = unz("belize_hbs_4_1_STATA_All.zip", "FF10Roster.dta")
-dtaFile13 = unz("belize_hbs_4_1_STATA_All.zip", "FF11Roster.dta")
-dtaFile14 = unz("belize_hbs_4_1_STATA_All.zip", "FF12Roster.dta")
-dtaFile15 = unz("belize_hbs_4_1_STATA_All.zip", "FF13Roster.dta")
-dtaFile16 = unz("belize_hbs_4_1_STATA_All.zip", "FF14Roster.dta")
-dtaFile17 = unz("belize_hbs_4_1_STATA_All.zip", "FF15Roster.dta")
-dtaFile18 = unz("belize_hbs_4_1_STATA_All.zip", "FF16Roster.dta")
-dtaFile19 = unz("belize_hbs_4_1_STATA_All.zip", "FF17Roster.dta")
-dtaFile20 = unz("belize_hbs_4_1_STATA_All.zip", "FF18Roster.dta")
-dtaFile21 = unz("belize_hbs_4_1_STATA_All.zip", "FF19Roster.dta")
-dtaFile22 = unz("belize_hbs_4_1_STATA_All.zip", "FF20Roster.dta")
-dtaFile23 = unz("belize_hbs_4_1_STATA_All.zip", "listingroster.dta")
-dtaFile24 = unz("belize_hbs_4_1_STATA_All.zip", "TR2_1.dta")
-dtaFile25 = unz("belize_hbs_4_1_STATA_All.zip", "TR2_2.dta")
+# extracting into given folder
 
-# Load new data frames from data in dta file
-belize_hbs_4 <- read_dta(dtaFile1)
+unzip('belize_hbs_4_1_SPSS_All.zip',
+      exdir = './SPSS_FOLDER/')
+
+# Load extracted files into R
+
+belize_hbs_4 <- read_sav('./SPSS_FOLDER/belize_hbs_4.sav', user_na = TRUE)
+
+names(belize_hbs_4)
+
+belize_hbs_4 |>
+  janitor::tabyl(ER9)
+
+#
 consumption_pattern_roster <- read_dta(dtaFile2)
-FF1_Roster <- read_dta(dtaFile3)
-FF2_Roster <- read_dta(dtaFile4)
-FF3_Roster <- read_dta(dtaFile5)
+FF1_Roster <- read_sav('./SPSS_FOLDER/FF1Roster.sav') 
+FF2_Roster <- read_sav('./SPSS_FOLDER/FF2Roster.sav') 
+FF3_Roster <- read_sav('./SPSS_FOLDER/FF3Roster.sav') 
 FF4_Roster <- read_dta(dtaFile6)
 FF5_Roster <- read_dta(dtaFile7)
 FF6_Roster <- read_dta(dtaFile8)
@@ -138,6 +126,93 @@ dbWriteTable(connection,"hbs_transportation_2",TR2_2,overwrite=T)
 dbReadTable(connection, "hbs_transportation_2")
 
 # Joins FF_Roster together
+
+# renaming columns and changing their type to factor
+# renaming so that we can rbind them
+# changing to factor so we can put them all into a single column
+
+f1 <- FF1_Roster |>
+  dplyr::rename(
+    id = FF1Roster__id,
+    B = FF1B,
+    C = FF1C,
+    D = FF1D,
+    E = FF1E,
+    F = FF1F
+  ) |>
+  mutate(
+    id = paste0('FF1_', id),
+    B = as_factor(B),
+    C = as_factor(C),
+    D = as_factor(D),
+    E = as_factor(E),
+    F = as_factor(F)
+  )
+
+f2 <- FF2_Roster |>
+  dplyr::rename(
+    id = FF2Roster__id,
+    B = FF2B,
+    C = FF2C,
+    D = FF2D,
+    E = FF2E,
+    F = FF2F
+  ) |>
+  mutate(
+    id = paste0('FF2_', id),
+    B = as_factor(B),
+    C = as_factor(C),
+    D = as_factor(D),
+    E = as_factor(E),
+    F = as_factor(F)
+  )
+
+f3 <- FF3_Roster |>
+  dplyr::rename(
+    id = FF3Roster__id,
+    B = FF3B,
+    C = FF3C,
+    D = FF3D,
+    E = FF3E,
+    F = FF3F
+  ) |>
+  mutate(
+    id = paste0('FF3_', id),
+    B = as_factor(B),
+    C = as_factor(C),
+    D = as_factor(D),
+    E = as_factor(E),
+    F = as_factor(F)
+  )
+
+# combine them into one data.frame
+f_temp <- rbind(f1, f2, f3) 
+
+# convert to long format and add unique ID for each item/roster/question
+
+f_temp <- f_temp |>
+  pivot_longer(
+    cols = 4:8,
+    names_to = 'Question',
+    values_to = 'Answer'
+  ) |>
+  mutate(
+    id_full = paste0(id, Question)
+  ) |>
+  relocate(
+    id_full,
+    .after = 'interview__id'
+  ) |> select(-c(id, Question))
+  
+# widen into final format
+
+f_final <- f_temp |>  
+  pivot_wider(names_from = id_full, values_from = Answer)
+
+FF1_Roster |>
+  full_join(FF2_Roster, by = c('interview__key', 'interview__id')) |>
+  full_join(FF3_Roster,  by = c('interview__key', 'interview__id'), relationship = 'many-to-many') |> View()
+
 FF1 <- full_join(FF1_Roster, FF2_Roster, relationship = "many-to-many", by = c("interview__key", "interview__id"))
 FF2 <- full_join(FF3_Roster, FF4_Roster, relationship = "many-to-many", by = c("interview__key", "interview__id"))
 FF1and2 <- full_join(FF1, FF2, relationship = "many-to-many", by = c("interview__key", "interview__id"))
