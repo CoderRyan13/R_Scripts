@@ -40,7 +40,17 @@ start_export(
 
 # STEP 2: CHECK EXPORT JOB PROGESS, UNTIL COMPLETE
 # specifying ID of job started in prior step
-get_export_job_details(job_id = started_job_id)
+
+while (TRUE){
+  res <- get_export_job_details(job_id = started_job_id)
+  
+  status <- res$ExportStatus 
+  
+  if (status == 'Completed'){
+    break
+  }
+}
+
 
 # STEP 3: DOWNLOAD THE EXPORT FILE, ONCE THE JOB IS COMPLETE
 # specifying:
