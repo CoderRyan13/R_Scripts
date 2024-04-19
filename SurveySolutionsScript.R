@@ -73,6 +73,8 @@ unzip('belize_hbs_4_1_SPSS_All.zip',
 
 belize_hbs_4 <- read_sav('./SPSS_FOLDER/belize_hbs_4.sav', user_na = TRUE)
 
+
+
 names(belize_hbs_4)
 
 belize_hbs_4 |>
@@ -103,6 +105,14 @@ FF20_Roster <- read_dta(dtaFile22)
 listing_roster <- read_dta(dtaFile23)
 TR2_1 <- read_dta(dtaFile24)
 TR2_2 <- read_dta(dtaFile25)
+
+listing_roster <- 
+  listing_roster |>
+  left_join(
+    belize_hbs_4 |> select(interview__key, cluster, ED_number, CTV, urban_rural, district),
+    by = 'interview__key'
+  )
+
 
 # Test if connection was made
 # query <- "show tables";
